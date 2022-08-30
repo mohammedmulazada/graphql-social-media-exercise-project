@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { ApolloServer, gql } from "apollo-server";
 import { Query, Mutation } from "./resolvers";
