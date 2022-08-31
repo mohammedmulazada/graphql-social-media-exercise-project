@@ -9,6 +9,10 @@ interface PostArgs {
   };
 }
 
+interface PostUpdateArgs {
+  postId: string;
+}
+
 interface PostPayloadType {
   userErrors: {
     message: string;
@@ -124,7 +128,7 @@ export const postResolvers = {
       }),
     };
   },
-  postDelete: async (_: any, args: { postId: string }, context: Context) => {
+  postDelete: async (_: any, args: PostUpdateArgs, context: Context) => {
     const { prisma, userInfo } = context;
     const { postId } = args;
 
@@ -170,5 +174,103 @@ export const postResolvers = {
     }
 
     return { userErrors: [], post: deletedPost };
+  },
+  postPublish: async (_: any, args: PostUpdateArgs, context: Context) => {
+    const { prisma, userInfo } = context;
+    const { postId } = args;
+
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "Unauthorized to publish a post.",
+          },
+        ],
+        post: null,
+      };
+    }
+
+    const error = await canUserMutatePost({
+      userId: userInfo.userId,
+      prisma,
+      postId: Number(postId),
+    });
+
+    if (error) {
+      return error;
+    }
+
+    const existingPost = await prisma.post.findUnique({
+      where: {
+        id: Number(postId),
+      },
+    });
+
+    if (!existingPost) {
+      return {
+        userErrors: [
+          {
+            message: "Post does not exist",
+          },
+        ],
+        post: null,
+      };
+    }
+
+    const post = await prisma.post.update({
+      data: { published: true },
+      where: { id: Number(postId) },
+    });
+
+    return { userErrors: [], post };
+  },
+  postUnpublish: async (_: any, args: PostUpdateArgs, context: Context) => {
+    const { prisma, userInfo } = context;
+    const { postId } = args;
+
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "Unauthorized to unpublish a post.",
+          },
+        ],
+        post: null,
+      };
+    }
+
+    const error = await canUserMutatePost({
+      userId: userInfo.userId,
+      prisma,
+      postId: Number(postId),
+    });
+
+    if (error) {
+      return error;
+    }
+
+    const existingPost = await prisma.post.findUnique({
+      where: {
+        id: Number(postId),
+      },
+    });
+
+    if (!existingPost) {
+      return {
+        userErrors: [
+          {
+            message: "Post does not exist",
+          },
+        ],
+        post: null,
+      };
+    }
+
+    const post = await prisma.post.update({
+      data: { published: false },
+      where: { id: Number(postId) },
+    });
+
+    return { userErrors: [], post };
   },
 };
