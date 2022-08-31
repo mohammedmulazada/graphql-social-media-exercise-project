@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { PrismaClient, Prisma } from "@prisma/client";
-import { ApolloServer, gql } from "apollo-server";
-import { Query, Mutation } from "./resolvers";
+import { ApolloServer } from "apollo-server";
+import { Query, Mutation, Profile, Post, User } from "./resolvers";
 import { typeDefs } from "./schema";
 import { getUserFromToken } from "./utils/getUserFromToken";
 
@@ -22,6 +22,9 @@ const server = new ApolloServer({
   typeDefs,
   resolvers: {
     Query,
+    Profile,
+    Post,
+    User,
     Mutation,
   },
   context: async (contextArgs): Promise<Context> => {
