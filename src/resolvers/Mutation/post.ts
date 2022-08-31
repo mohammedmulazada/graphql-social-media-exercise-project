@@ -1,5 +1,6 @@
 import { Post, Prisma } from "@prisma/client";
 import { Context } from "../..";
+import { canUserMutatePost } from "../../utils/canUserMutatePost";
 
 interface PostArgs {
   post: {
@@ -21,7 +22,19 @@ export const postResolvers = {
     args: PostArgs,
     context: Context
   ): Promise<PostPayloadType> => {
-    const { prisma } = context;
+    const { prisma, userInfo } = context;
+
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "Unauthorized to create a post.",
+          },
+        ],
+        post: null,
+      };
+    }
+
     const { post } = args;
     const { title, content } = post;
 
@@ -37,7 +50,7 @@ export const postResolvers = {
     }
 
     const newPost = await prisma.post.create({
-      data: { title, content, authorId: 1 },
+      data: { title, content, authorId: userInfo.userId },
     });
 
     return { userErrors: [], post: newPost };
@@ -47,8 +60,30 @@ export const postResolvers = {
     args: { post: PostArgs["post"]; postId: string },
     context: Context
   ): Promise<PostPayloadType> => {
-    const { prisma } = context;
+    const { prisma, userInfo } = context;
     const { post, postId } = args;
+
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "Unauthorized to create a post.",
+          },
+        ],
+        post: null,
+      };
+    }
+
+    const error = await canUserMutatePost({
+      userId: userInfo.userId,
+      prisma,
+      postId: Number(postId),
+    });
+
+    if (error) {
+      return error;
+    }
+
     const { title, content } = post;
 
     if (!title && !content) {
@@ -90,8 +125,29 @@ export const postResolvers = {
     };
   },
   postDelete: async (_: any, args: { postId: string }, context: Context) => {
-    const { prisma } = context;
+    const { prisma, userInfo } = context;
     const { postId } = args;
+
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "Unauthorized to create a post.",
+          },
+        ],
+        post: null,
+      };
+    }
+
+    const error = await canUserMutatePost({
+      userId: userInfo.userId,
+      prisma,
+      postId: Number(postId),
+    });
+
+    if (error) {
+      return error;
+    }
 
     if (!postId) {
       return {
