@@ -16,6 +16,7 @@
     "@types/jsonwebtoken": "^8.5.9",
     "apollo-server": "^3.10.2",
     "bcryptjs": "^2.4.3",
+    "dataloader": "^2.1.0",
     "dotenv": "^16.0.1",
     "graphql": "^16.6.0",
     "jsonwebtoken": "^8.5.1",
